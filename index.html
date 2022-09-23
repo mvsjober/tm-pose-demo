@@ -49,11 +49,13 @@
           
           labelContainer = document.getElementById("label-container");
           classesContainer = document.getElementById("classes-container");
-          classesContainer.appendChild(document.createElement("h3"));
-          classesContainer.childNodes[0].innerHTML = "Tunnistettavat asennot";
+          // classesContainer.appendChild(document.createElement("h3"));
+          // classesContainer.childNodes[0].innerHTML = "Tunnistettavat asennot";
 
-          for (let i = 0; i < maxPredictions+1; i++) { // and class labels
-              classesContainer.appendChild(document.createElement("div"));
+          for (let i = 0; i < maxPredictions; i++) { // and class labels
+              var elem = document.createElement("div");
+              elem.setAttribute('align', 'center');
+              classesContainer.appendChild(elem);
           }
       }
   
@@ -81,13 +83,27 @@
           for (let i = 0; i < maxPredictions; i++) {
               const probability = prediction[i].probability;
               const className = prediction[i].className
-              const classHTML =  "<p>" + className + "</p>" + " " + bootstrapProgressBar((probability * 100.0).toFixed(0));
-                    // "<p>" + className + ": " + probability.toFixed(2) + "</p>";
+              // const classHTML =  "<p>" + className + "</p>" + " " + bootstrapProgressBar((probability * 100.0).toFixed(0));
+              //       // "<p>" + className + ": " + probability.toFixed(2) + "</p>";
+            //   const classHTML =  "<br/><p><img height=150 margin=5 src=\"images/asento-" + className.toLowerCase() + ".png\">" + " " + bootstrapProgressBar((probability * 100.0).toFixed(0)) + "</p>";
+
+            // <div class="row">
+            //   <div class="col-md-3"><img height=150 src="images/asento-perusasento.png"/></div>
+            //   <div class="col-md-9"><div id="perusasento-container"></div></div>
+            // </div>
+
+              
+              // "<p>" + className + ": " + probability.toFixed(2) + "</p>";
+              // const classHTML = '<div class="col-md-6 center-block"><img height=170 src="images/asento-' + className.toLowerCase() + '.png"/></div>' +
+              //       '<div class="col-md-6 center-block"><br/><br/>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</div>';
+              const classHTML = '<img height=140 margin=5 src="images/asento-' + className.toLowerCase() + '.png"/>' +
+                    '<p>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</p><br/><br/>';
+              
               if (probability > bestProb) {
                   bestLabel = className;
                   bestProb = probability;
               }
-              classesContainer.childNodes[i+1].innerHTML = classHTML;
+              classesContainer.childNodes[i].innerHTML = classHTML;
           }
   
           labelContainer.innerHTML = "<h2>" + bestLabel + " (" + (bestProb * 100.0).toFixed(0) + "%)</h2>";
@@ -124,10 +140,10 @@
     <div class="container">
       <div class="page-header">
         <div class="row">
-          <div class="col-md-11">
+          <div class="col-lg-11">
             <h2 class="text-muted">Valmiiksi opetettu asentomalli</h2>
           </div>
-          <div class="col-md-1">
+          <div class="col-lg-1">
             <a href="https://www.csc.fi"><img class="img-responsive" src="images/csc-logo.png"></a>
           </div>
         </div>
@@ -135,27 +151,44 @@
 
       <div class="jumbotron">
         <div class="row">
-          <div class="col-md-8">
+          <div class="col-lg-7">
             <h1>Liikennepoliisi</h1>
-          </div>
-          <div class="col-md-4">
-            <img src="images/dalle-police.png">
-          </div>
-        </div>
-
-        <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Käynnistä</a></p>
-
-        <div class="row">
-          <div class="col-md-8">
+            <img src="images/dalle-police.png" />
+            <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Käynnistä</a></p>
             <div><canvas id="canvas"></canvas></div>
             <div id="label-container"></div>
           </div>
-          <div class="col-md-4">
-            <div id="classes-container">
-            </div>
+          <div class="col-lg-5">
+            <h3>Tunnistettavat asennot</h3>
+            <div id="classes-container"></div>
           </div>
         </div>
       </div>
+
+      
+      <!-- <div class="jumbotron"> -->
+      <!--   <div class="row"> -->
+      <!--     <div class="col-md-8"> -->
+      <!--       <h1>Liikennepoliisi</h1> -->
+      <!--     </div> -->
+      <!--     <div class="col-md-4"> -->
+      <!--       <img src="images/dalle-police.png"> -->
+      <!--     </div> -->
+      <!--   </div> -->
+
+      <!--   <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Käynnistä</a></p> -->
+
+      <!--   <div class="row"> -->
+      <!--     <div class="col-md-8"> -->
+      <!--       <div><canvas id="canvas"></canvas></div> -->
+      <!--       <div id="label-container"></div> -->
+      <!--     </div> -->
+      <!--     <div class="col-md-4"> -->
+      <!--       <div id="classes-container"> -->
+      <!--       </div> -->
+      <!--     </div> -->
+      <!--   </div> -->
+      <!-- </div> -->
       
     </div> <!-- /container -->
   </body>
