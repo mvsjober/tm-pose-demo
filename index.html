@@ -43,7 +43,7 @@
           maxPredictions = model.getTotalClasses();
   
           // Convenience function to setup a webcam
-          const size = 500;
+          const size = 600;
           const flip = true; // whether to flip the webcam
           webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
           await webcam.setup(); // request access to the webcam
@@ -117,7 +117,7 @@
                   const imageHTML = className;
                   const classHTML = imageHTML + seenX + '<p>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</p><br/><br/>';
               
-                  classesContainer.childNodes[i].innerHTML = classHTML;
+                  classesContainer.childNodes[i].innerHTML = '<div class="col-md-2">' + classHTML + '</div>';
               }
           }
   
@@ -164,31 +164,33 @@
       });
     </script>
 
-    <div class="container">
-      <div class="page-header">
-        <div class="row">
-          <div class="col-lg-11">
-            <h2 class="text-muted">Valmiiksi opetettu asentomalli</h2>
-          </div>
-          <div class="col-lg-1">
-            <a href="https://www.csc.fi"><img class="img-responsive" src="images/csc-logo.png"></a>
-          </div>
-        </div>
-      </div>
-
+    <div class="container-fluid">
+      <!-- <div class="page-header"> -->
+      <!--   <div class="row"> -->
+      <!--     <div class="col-md-11"> -->
+      <!--       <h2 class="text-muted">Valmiiksi opetettu asentomalli</h2> -->
+      <!--     </div> -->
+      <!--     <div class="col-md-1"> -->
+      <!--       <a href="https://www.csc.fi"><img class="img-responsive" src="images/csc-logo.png"></a> -->
+      <!--     </div> -->
+      <!--   </div> -->
+      <!-- </div> -->
+      <br/>
       <div class="jumbotron">
         <div class="row">
-          <div class="col-lg-7">
+          <div class="col-md-6">
             <h1>Jumppabotti</h1>
             <div id="image-container"><img src="images/dalle-robot1.png" /></div>
             <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Aloita!</a></p>
+          </div>
+          <div class="col-md-6">
             <div><canvas id="canvas"></canvas></div>
             <div id="label-container"></div>
           </div>
-          <div class="col-lg-5">
-            <h3>Jumppa-ohjelma</h3>
-            <div id="classes-container"></div>
-          </div>
+        </div>
+        <div class="row">
+          <h3>Jumppa-ohjelma</h3>
+          <div id="classes-container"></div>
         </div>
       </div>
 
