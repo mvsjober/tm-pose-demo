@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Valmiiksi opetettu asentomalli</title>
+    <title>Jumppabotti</title>
 
     <!-- Bootstrap -->
     <link rel="stylesheet" href="bootstrap-3.4.1-dist/css/bootstrap.min.css">
@@ -23,8 +23,14 @@
       // the link to your model provided by Teachable Machine export panel
       //const URL = "./models/my-pose-model2/";
       //const URL = "https://teachablemachine.withgoogle.com/models/6ArUPp9_9/";
-      const URL = "https://teachablemachine.withgoogle.com/models/FWnxDkxYI/";
+      //const URL = "https://teachablemachine.withgoogle.com/models/FWnxDkxYI/";
+      const URL = "https://teachablemachine.withgoogle.com/models/fzddtmuGr/";
+      const alpha = 0.1;
+      const seenLimit = 0.8;
+      const skipLast = 1;
+      
       let model, webcam, ctx, labelContainer, classesContainer, maxPredictions;
+      let seen, avgPred;
   
       async function init() {
           const modelURL = URL + "model.json";
@@ -51,13 +57,18 @@
           
           labelContainer = document.getElementById("label-container");
           classesContainer = document.getElementById("classes-container");
+          imageContainer = document.getElementById("image-container");
           // classesContainer.appendChild(document.createElement("h3"));
           // classesContainer.childNodes[0].innerHTML = "Tunnistettavat asennot";
 
+          seen = [];
+          avgPred = [];
           for (let i = 0; i < maxPredictions; i++) { // and class labels
               var elem = document.createElement("div");
               elem.setAttribute('align', 'center');
               classesContainer.appendChild(elem);
+              seen[i] = false;
+              avgPred[i] = 0.0;
           }
       }
   
@@ -68,55 +79,56 @@
       }
   
       async function predict() {
-          // Prediction #1: run input through posenet
+          // Run input through posenet
           // estimatePose can take in an image, video or canvas html element
           const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
-          // Prediction 2: run input through teachable machine classification model
+          // Run input through teachable machine classification model
           const prediction = await model.predict(posenetOutput);
   
-          // for (let i = 0; i < maxPredictions; i++) {
-          //     const classPrediction =
-          //         prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-          //     labelContainer.childNodes[i].innerHTML = classPrediction;
-          // }
           var bestLabel = "";
           var bestProb = 0.0;
+          var allSeen = true;
   
           for (let i = 0; i < maxPredictions; i++) {
-              const probability = prediction[i].probability;
+              const curProb = prediction[i].probability;
               const className = prediction[i].className
-              // const classHTML =  "<p>" + className + "</p>" + " " + bootstrapProgressBar((probability * 100.0).toFixed(0));
-              //       // "<p>" + className + ": " + probability.toFixed(2) + "</p>";
-            //   const classHTML =  "<br/><p><img height=150 margin=5 src=\"images/asento-" + className.toLowerCase() + ".png\">" + " " + bootstrapProgressBar((probability * 100.0).toFixed(0)) + "</p>";
 
-            // <div class="row">
-            //   <div class="col-md-3"><img height=150 src="images/asento-perusasento.png"/></div>
-            //   <div class="col-md-9"><div id="perusasento-container"></div></div>
-            // </div>
-
+              avgPred[i] = (1.0-alpha) * avgPred[i] + alpha * curProb;
               
-              // "<p>" + className + ": " + probability.toFixed(2) + "</p>";
-              // const classHTML = '<div class="col-md-6 center-block"><img height=170 src="images/asento-' + className.toLowerCase() + '.png"/></div>' +
-              //       '<div class="col-md-6 center-block"><br/><br/>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</div>';
-              const classHTML = '<img height=140 margin=5 src="images/asento-' + className.toLowerCase() + '.png"/>' +
-                    '<p>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</p><br/><br/>';
+              let probability = avgPred[i];
               
               if (probability > bestProb) {
                   bestLabel = className;
                   bestProb = probability;
+                  if (probability > seenLimit) {
+                      seen[i] = true;
+                  }
               }
-              classesContainer.childNodes[i].innerHTML = classHTML;
+
+              // the rest of the steps are skipped for "Nothing" class
+              if (i < maxPredictions-skipLast) {
+                  seenX = ''
+                  if (seen[i])
+                      seenX = '&nbsp;<img height=140 margin=5 src="images/check.png" />';
+                  else
+                      allSeen = false;
+
+                  //const imageHTML = '<img height=140 margin=5 src="images/asento-' + className.toLowerCase() + '.png"/>';
+                  const imageHTML = className;
+                  const classHTML = imageHTML + seenX + '<p>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</p><br/><br/>';
+              
+                  classesContainer.childNodes[i].innerHTML = classHTML;
+              }
           }
   
           labelContainer.innerHTML = "<h2>" + bestLabel + " (" + (bestProb * 100.0).toFixed(0) + "%)</h2>";
 
-              
+          imgNumber = '1';
+          if (allSeen)
+              imgNumber = '2';
           
-          // for (let i = 0; i < maxPredictions; i++) {
-          //     const classPrediction =
-          //           prediction[i].className + ": " + prediction[i].probability.toFixed(2);
-          //     labelContainer.childNodes[i+1].innerHTML = classPrediction;
-          // }
+          imageContainer.innerHTML = '<img src="images/dalle-robot' + imgNumber + '.png" />'
+
           // finally draw the poses
           drawPose(pose);
       }
@@ -137,6 +149,19 @@
               }
           }
       }
+
+      document.addEventListener("keypress", function onEvent(event) {
+          if (event.key == "P")
+              seen[0] = true;
+          else if (event.key == "X")
+              seen[1] = true;
+          else if (event.key == "T")
+              seen[2] = true;
+          else if (event.key == "K")
+              seen[3] = true;
+          else if (event.key == "H")
+              seen[4] = true;
+      });
     </script>
 
     <div class="container">
@@ -154,44 +179,19 @@
       <div class="jumbotron">
         <div class="row">
           <div class="col-lg-7">
-            <h1>Liikennepoliisi</h1>
-            <img src="images/dalle-police.png" />
-            <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Käynnistä</a></p>
+            <h1>Jumppabotti</h1>
+            <div id="image-container"><img src="images/dalle-robot1.png" /></div>
+            <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Aloita!</a></p>
             <div><canvas id="canvas"></canvas></div>
             <div id="label-container"></div>
           </div>
           <div class="col-lg-5">
-            <h3>Tunnistettavat asennot</h3>
+            <h3>Jumppa-ohjelma</h3>
             <div id="classes-container"></div>
           </div>
         </div>
       </div>
 
-      
-      <!-- <div class="jumbotron"> -->
-      <!--   <div class="row"> -->
-      <!--     <div class="col-md-8"> -->
-      <!--       <h1>Liikennepoliisi</h1> -->
-      <!--     </div> -->
-      <!--     <div class="col-md-4"> -->
-      <!--       <img src="images/dalle-police.png"> -->
-      <!--     </div> -->
-      <!--   </div> -->
-
-      <!--   <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Käynnistä</a></p> -->
-
-      <!--   <div class="row"> -->
-      <!--     <div class="col-md-8"> -->
-      <!--       <div><canvas id="canvas"></canvas></div> -->
-      <!--       <div id="label-container"></div> -->
-      <!--     </div> -->
-      <!--     <div class="col-md-4"> -->
-      <!--       <div id="classes-container"> -->
-      <!--       </div> -->
-      <!--     </div> -->
-      <!--   </div> -->
-      <!-- </div> -->
-      
     </div> <!-- /container -->
   </body>
 </html>
