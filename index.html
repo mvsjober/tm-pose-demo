@@ -28,9 +28,24 @@
       const alpha = 0.1;
       const seenLimit = 0.8;
       const skipLast = 1;
-      
-      let model, webcam, ctx, labelContainer, classesContainer, maxPredictions;
+      const partsLimit = 0.5;
+      const bodyPartsLimit = 10;
+
+      let model, webcam, ctx, maxPredictions;
+      let labelContainer, classesContainer, imageContainer, debugContainer;
       let seen, avgPred;
+
+      let poseImages = ['perusasento.png',
+                        'x-asento.png',
+                        't-asento.png',
+                        'kyykky.png',
+                        'kurotus.png'];
+      let poseName = ['Perusasento',
+                      'X-asento',
+                      'T-asento',
+                      'Kyykky',
+                      'Kurotus',
+                      ''];
   
       async function init() {
           const modelURL = URL + "model.json";
@@ -58,8 +73,7 @@
           labelContainer = document.getElementById("label-container");
           classesContainer = document.getElementById("classes-container");
           imageContainer = document.getElementById("image-container");
-          // classesContainer.appendChild(document.createElement("h3"));
-          // classesContainer.childNodes[0].innerHTML = "Tunnistettavat asennot";
+          debugContainer = document.getElementById("debug-container");
 
           seen = [];
           avgPred = [];
@@ -84,11 +98,28 @@
           const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
           // Run input through teachable machine classification model
           const prediction = await model.predict(posenetOutput);
+
+          let headParts = 0;
+          let bodyParts = 0;
+          let poseScore = 0.0;
+          if (pose) {
+              poseScore = pose.score;
+              for (let i = 0; i<pose.keypoints.length; i++) {
+                  if (pose.keypoints[i].score > partsLimit) {
+                      if (i <= 4) // 0=nose, 1=leftEye, 2=rightEye, 3=leftEar, 4=rightEar
+                          headParts++;
+                      else
+                          bodyParts++; // 5=leftShoulder, etc
+                  }
+              }
+          }
+
+          debugContainer.innerHTML = "<p>score: " + poseScore.toFixed(2) + ", body points: " + bodyParts + "/" + bodyPartsLimit;
   
           var bestLabel = "";
           var bestProb = 0.0;
           var allSeen = true;
-  
+
           for (let i = 0; i < maxPredictions; i++) {
               const curProb = prediction[i].probability;
               const className = prediction[i].className
@@ -96,9 +127,12 @@
               avgPred[i] = (1.0-alpha) * avgPred[i] + alpha * curProb;
               
               let probability = avgPred[i];
+
+              if (bodyParts < bodyPartsLimit)
+                  probability = 0.0;
               
               if (probability > bestProb) {
-                  bestLabel = className;
+                  bestLabel = poseName[i];
                   bestProb = probability;
                   if (probability > seenLimit) {
                       seen[i] = true;
@@ -113,21 +147,24 @@
                   else
                       allSeen = false;
 
-                  //const imageHTML = '<img height=140 margin=5 src="images/asento-' + className.toLowerCase() + '.png"/>';
-                  const imageHTML = className;
+                  const imageHTML = '<img height=140 margin=5 src="images/' + poseImages[i] + '"/>';
                   const classHTML = imageHTML + seenX + '<p>' + bootstrapProgressBar((probability * 100.0).toFixed(0)) + '</p><br/><br/>';
               
                   classesContainer.childNodes[i].innerHTML = '<div class="col-md-2">' + classHTML + '</div>';
               }
           }
-  
-          labelContainer.innerHTML = "<h2>" + bestLabel + " (" + (bestProb * 100.0).toFixed(0) + "%)</h2>";
 
-          imgNumber = '1';
+          if (bestLabel.length === 0) {
+              labelContainer.innerHTML = "";
+          } else {
+              labelContainer.innerHTML = "<h2>" + bestLabel + " (" + (bestProb * 100.0).toFixed(0) + "%)</h2>";
+          }
+
+          botImage = 'botti-a-alpha.png';
           if (allSeen)
-              imgNumber = '2';
+              botImage = 'botti-b-alpha.png';
           
-          imageContainer.innerHTML = '<img src="images/dalle-robot' + imgNumber + '.png" />'
+          imageContainer.innerHTML = '<img src="images/' + botImage + '" height=500 />'
 
           // finally draw the poses
           drawPose(pose);
@@ -165,22 +202,12 @@
     </script>
 
     <div class="container-fluid">
-      <!-- <div class="page-header"> -->
-      <!--   <div class="row"> -->
-      <!--     <div class="col-md-11"> -->
-      <!--       <h2 class="text-muted">Valmiiksi opetettu asentomalli</h2> -->
-      <!--     </div> -->
-      <!--     <div class="col-md-1"> -->
-      <!--       <a href="https://www.csc.fi"><img class="img-responsive" src="images/csc-logo.png"></a> -->
-      <!--     </div> -->
-      <!--   </div> -->
-      <!-- </div> -->
       <br/>
       <div class="jumbotron">
         <div class="row">
           <div class="col-md-6">
             <h1>Jumppabotti</h1>
-            <div id="image-container"><img src="images/dalle-robot1.png" /></div>
+            <div id="image-container"><img src="images/botti-a-alpha.png" height=500 /></div>
             <p><a class="btn btn-lg btn-success" role="button" onclick="init()">Aloita!</a></p>
           </div>
           <div class="col-md-6">
@@ -193,6 +220,7 @@
           <div id="classes-container"></div>
         </div>
       </div>
+      <div id="debug-container"></div>
 
     </div> <!-- /container -->
   </body>
